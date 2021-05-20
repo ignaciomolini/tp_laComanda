@@ -23,9 +23,9 @@ $dotenv->safeLoad();
 // Instantiate App
 $app = AppFactory::create();
 
-$app->setBasePath("/programacion3/TP_LaComanda/app/");
-$app->addBodyParsingMiddleware();
-$app->addRoutingMiddleware();
+// $app->setBasePath("/programacion3/TP_LaComanda/app/");
+// $app->addBodyParsingMiddleware();
+// $app->addRoutingMiddleware();
 
 // Add error middleware
 $app->addErrorMiddleware(true, true, true);
