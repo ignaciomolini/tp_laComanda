@@ -38,10 +38,10 @@ $app->group('/usuarios', function (RouteCollectorProxy $group) {
     $group->put('[/]', \UsuarioController::class . ':CargarUno');
   });
 
-// $app->get('[/]', function (Request $request, Response $response) {    
-//     $response->getBody()->write("Slim Framework 4 PHP");
-//     return $response;
+$app->get('[/]', function (Request $request, Response $response) {    
+    $response->getBody()->write("Slim Framework 4 PHP funcionando");
+    return $response;
 
-// });
+});
 
 $app->run();
