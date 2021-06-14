@@ -2,7 +2,9 @@
 require_once './models/Usuario.php';
 require_once './interfaces/IApiUsable.php';
 
-class UsuarioController extends Usuario implements IApiUsable
+use \App\Models\Usuario as Usuario;
+
+class UsuarioController implements IApiUsable
 {
     public function CargarUno($request, $response, $args)
     {
@@ -14,20 +16,25 @@ class UsuarioController extends Usuario implements IApiUsable
         $clave = $parametros['clave'];
         $rol = $parametros['rol'];
 
-        $usr = new Usuario();
-        $usr->nombre = $nombre;
-        $usr->apellido = $apellido;
-        $usr->mail = $mail;
-        $usr->clave = $clave;
-        $usr->rol = $rol;
-        $usr->estado = "activo";
-        $usr->fecha_de_ingreso = date('Y-m-d H:i:s');
+        $userMail = Usuario::where('mail', $mail)->first();
 
-        if (parent::verificarRol($rol)) {
-            $usr->crearUsuario();
-            $payload = json_encode(array("mensaje" => "Usuario creado con exito"));
+        if (!$userMail) {
+            if (self::verificarRol($rol)) {
+                $user = new Usuario();
+                $user->nombre = $nombre;
+                $user->apellido = $apellido;
+                $user->mail = $mail;
+                $user->clave = $clave;
+                $user->rol = $rol;
+                $user->estado = "activo";
+                $user->fecha_de_ingreso = date('Y-m-d H:i:s');
+                $user->save();
+                $payload = json_encode(array("mensaje" => "Usuario creado con exito"));
+            } else {
+                $payload = json_encode(array("error" => "Rol incorrecto"));
+            }
         } else {
-            $payload = json_encode(array("error" => "Rol incorrecto"));
+            $payload = json_encode(array("error" => "Ya se encuentra registrado un usuario con ese mail"));
         }
 
         $response->getBody()->write($payload);
@@ -36,8 +43,8 @@ class UsuarioController extends Usuario implements IApiUsable
 
     public function TraerUno($request, $response, $args)
     {
-        $idUsuario = $args['id'];
-        $usuario = parent::obtenerUsuario($idUsuario);
+        $id = $args['id'];
+        $usuario = Usuario::find($id);
 
         if (!$usuario) {
             $payload = json_encode(array("mensaje" => "El usuario no existe"));
@@ -51,7 +58,7 @@ class UsuarioController extends Usuario implements IApiUsable
 
     public function TraerTodos($request, $response, $args)
     {
-        $lista = parent::obtenerTodos();
+        $lista = Usuario::all();
 
         if (empty($lista)) {
             $payload = json_encode(array("mensaje" => "No hay usuarios cargados en el sistema"));
@@ -75,18 +82,17 @@ class UsuarioController extends Usuario implements IApiUsable
         $rol = $parametros['rol'];
         $estado = $parametros['estado'];
 
-        $usr = new Usuario();
-        $usr->id = (int) $id;
-        $usr->nombre = $nombre;
-        $usr->apellido = $apellido;
-        $usr->mail = $mail;
-        $usr->clave = $clave;
-        $usr->rol = $rol;
-        $usr->estado = $estado;
+        $user = Usuario::find($id);
 
-        if (parent::verificarRol($rol) && parent::verificarEstado($estado)) {
-            if (parent::verificarUsuarioPorId($id)) {
-                $usr->modificarUsuario();
+        if (self::verificarRol($rol) && self::verificarEstado($estado)) {
+            if ($user) {
+                $user->nombre = $nombre;
+                $user->apellido = $apellido;
+                $user->mail = $mail;
+                $user->clave = $clave;
+                $user->rol = $rol;
+                $user->estado = $estado;
+                $user->save();
                 $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
             } else {
                 $payload = json_encode(array("error" => "No existe un usuario con ese id"));
@@ -102,10 +108,14 @@ class UsuarioController extends Usuario implements IApiUsable
     public function BorrarUno($request, $response, $args)
     {
         $parametros = $request->getParsedBody();
-        $idUsuario = $parametros['idUsuario'];
+        $id = $parametros['id'];
 
-        if (parent::verificarUsuarioPorId($idUsuario) && parent::obtenerEstado($idUsuario) != "baja") {
-            parent::borrarUsuario($idUsuario);
+        $user = Usuario::find($id);
+
+        if ($user) {
+            $user->estado = "baja";
+            $user->save();
+            $user->delete();
             $payload = json_encode(array("mensaje" => "Usuario dado de baja con exito"));
         } else {
             $payload = json_encode(array("error" => "No existe un usuario con ese id o ya fue dado de baja"));
@@ -113,5 +123,22 @@ class UsuarioController extends Usuario implements IApiUsable
 
         $response->getBody()->write($payload);
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public static function verificarRol($rol)
+    {
+        $rta = false;
+        if (strcasecmp("mozo", $rol) == 0 || strcasecmp("cocinero", $rol) == 0 || strcasecmp("cervecero", $rol) == 0 || strcasecmp("bartender", $rol) == 0 || strcasecmp("socio", $rol) == 0) {
+            $rta = true;
+        }
+        return $rta;
+    }
+
+    public static function verificarEstado($estado){
+        $rta = false;
+        if(strcasecmp("activo", $estado) == 0 || strcasecmp("suspendido", $estado) == 0){
+            $rta = true;
+        }
+        return $rta;
     }
 }

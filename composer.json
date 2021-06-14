@@ -10,6 +10,8 @@
         "firebase/php-jwt": "^5.2",
         "illuminate/database": "^8.41",
         "oscarotero/psr7-middlewares": "^3.21",
-        "vlucas/phpdotenv": "^5.3"
+        "vlucas/phpdotenv": "^5.3",
+        "mikehaertl/phpwkhtmltopdf": "^2.5",
+        "dompdf/dompdf": "^1.0"
     }
 }
