@@ -132,8 +132,8 @@ $app->group('/informes', function (RouteCollectorProxy $group) {
 })->add(new AutentificadorMW(['socio']));
 
 $app->get('[/]', function (Request $request, Response $response) {
-    $params = $request->getQueryParams();
-    var_dump($params);
+    //local: http://localhost/programacion3/TP_LaComanda/app/
+    //remoto: https://molini-ignacio.herokuapp.com/
     $response->getBody()->write("TP La Comanda - Programacion 3");
     return $response;
 });
