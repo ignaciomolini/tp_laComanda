@@ -7,6 +7,7 @@ require_once './models/Usuario.php';
 require_once './models/TareaUsuario.php';
 require_once './helpers/Archivos.php';
 require_once './helpers/PedidoHtml.php';
+require_once './helpers/CuentaHtml.php';
 require_once './helpers/TareaUsuarioHelper.php';
 require_once './interfaces/IApiUsable.php';
 
@@ -46,7 +47,7 @@ class PedidoController implements IApiUsable
             $pedido->tiempo_estimado = $tiempoEstimado;
             $pedido->hora_inicio = date('H:i:s');
             $pedido->fecha = date('Y-m-d');
-            $ruta = Archivos::MoverArchivo('pedido-'.$pedido->codigo, $archivos['foto'], './assets/fotoPedidos/');
+            $ruta = Archivos::MoverArchivo('pedido-' . $pedido->codigo, $archivos['foto'], './assets/fotoPedidos/');
             $pedido->foto = $ruta;
 
             $mesa = Mesa::find($idMesa);
@@ -267,8 +268,10 @@ class PedidoController implements IApiUsable
         $dataUsuario = AutentificadorJWT::ObtenerData($token);
         $usuario = Usuario::where('mail', $dataUsuario->mail)->first();
         $pedido = Pedido::find($idPedido);
+        $dompdf = new Dompdf();
 
-        if ($pedido && $pedido->estado == "servido") {
+        if ($pedido && $pedido->estado == 'servido') {
+            $cuenta = CuentaHtml::TablaCuenta($pedido);
             $pedido->id_usuario = $usuario->id;
             $pedido->estado = 'cobrandolo';
             $pedido->save();
@@ -276,13 +279,17 @@ class PedidoController implements IApiUsable
             $mesa->estado = 'con cliente pagando';
             $mesa->save();
             TareaUsuarioHelper::CargarDatos($pedido->codigo, $usuario->id, 'mesas', 'entregar cuenta');
-            $payload = array('mensaje' => 'La cuenta fue entregada al cliente');
         } else {
-            $payload = array('error' => 'El pedido no existe o no fue servido');
+            $cuenta = "<h1>No existe un pedido con ese id o no esta servido</h1>";
         }
 
-        $response->getBody()->write(json_encode($payload));
-        return $response->withHeader('Content-Type', 'application/json');
+        $dompdf->loadHtml($cuenta);
+        $dompdf->setPaper('a5', 'portrait');
+        $dompdf->render();
+        $output = $dompdf->output();
+
+        $response->getBody()->write($output);
+        return $response->withHeader('Content-Type', 'application/pdf');
     }
 
     public function CobrarPedido($request, $response, $args)
