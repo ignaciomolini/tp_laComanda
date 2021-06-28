@@ -85,7 +85,7 @@ class SubPedidoController
         $dataUsuario = AutentificadorJWT::ObtenerData($token);
         $usuario = Usuario::where('mail', $dataUsuario->mail)->first();
 
-        $lista = SubPedido::where('id_usuario', $usuario->id)->get();
+        $lista = SubPedido::where('id_usuario', $usuario->id)->where('estado', 'en preparacion')->get();
 
         if(count($lista) == 0){
             $payload = array('mensaje' => 'No tiene subpedidos a cargo');
@@ -122,9 +122,9 @@ class SubPedidoController
             $pedido->estado = 'en preparacion';
             $pedido->save();
             TareaUsuarioHelper::CargarDatos($subPedido->codigo_pedido, $subPedido->id_usuario, $subPedido->sector, 'tomar subpedido pendiente');
-            $payload = json_encode(array("mensaje" => "El pedido esta en preparacion"));
+            $payload = json_encode(array("mensaje" => "El subpedido esta en preparacion"));
         } else {
-            $payload = json_encode(array("error" => "No puede tomar ese pedido"));
+            $payload = json_encode(array("error" => "No puede tomar ese subpedido"));
         }
 
         $response->getBody()->write($payload);
@@ -150,11 +150,11 @@ class SubPedidoController
             $subPedido->estado = 'listo para servir';
             $subPedido->save();
             $payload = array("mensaje" => "El subpedido esta listo para servir");
+            TareaUsuarioHelper::CargarDatos($subPedido->codigo_pedido, $subPedido->id_usuario, $subPedido->sector, 'terminar subpedido');
             if (count(SubPedido::where('codigo_pedido', $subPedido->codigo_pedido)->get()) == count(SubPedido::where('codigo_pedido', $subPedido->codigo_pedido)->where('estado', 'listo para servir')->get())) {
                 $pedido = Pedido::where('codigo', $subPedido->codigo_pedido)->first();
                 $pedido->estado = 'listo para servir';
-                $pedido->save();
-                TareaUsuarioHelper::CargarDatos($subPedido->codigo_pedido, $subPedido->id_usuario, $subPedido->sector, 'terminar subpedido');
+                $pedido->save();       
                 $payload = array("mensaje" => "El pedido completo esta listo para servir");
             }
         }

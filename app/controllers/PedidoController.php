@@ -253,7 +253,7 @@ class PedidoController implements IApiUsable
             TareaUsuarioHelper::CargarDatos($pedido->codigo, $usuario->id, 'mesas', 'servir pedido');
             $payload = array('mensaje' => 'El pedido fue servido');
         } else {
-            $payload = array('error' => 'El pedido no existe o no esta listo para servirse');
+            $payload = array('error' => 'El pedido no existeo su estado es distinto a listo para servir');
         }
 
         $response->getBody()->write(json_encode($payload));
@@ -280,7 +280,7 @@ class PedidoController implements IApiUsable
             $mesa->save();
             TareaUsuarioHelper::CargarDatos($pedido->codigo, $usuario->id, 'mesas', 'entregar cuenta');
         } else {
-            $cuenta = "<h1>No existe un pedido con ese id o no esta servido</h1>";
+            $cuenta = "<h1>No existe un pedido con ese id o su estado es distinto a servido</h1>";
         }
 
         $dompdf->loadHtml($cuenta);

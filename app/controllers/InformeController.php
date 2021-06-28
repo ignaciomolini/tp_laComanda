@@ -148,7 +148,7 @@ class InformeController
         }
         $menosVendidos['cantidad'] = $min;
         $menosVendidos['productos'] = $prods;
-        $payload = array("Los productos mas vendidos en los ultimos $dias dias" =>  $menosVendidos);
+        $payload = array("Los productos menos vendidos en los ultimos $dias dias" =>  $menosVendidos);
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json');
     }
@@ -328,7 +328,7 @@ class InformeController
     {
         $dias = $args['dias'];
         $fecha = self::restarDias($dias, date('Y-m-d'));
-        $pedidos = Pedido::where('precio', Pedido::max('precio'))->whereBetween('fecha', [$fecha, date('Y-m-d')])->get();
+        $pedidos = Pedido::where('precio', Pedido::whereBetween('fecha', [$fecha, date('Y-m-d')])->max('precio'))->get();
 
         if (count($pedidos) == 0) {
             $payload = array('mensaje' => "No se uso ninguna mesa en los ultimos $dias dias");
@@ -351,7 +351,7 @@ class InformeController
     {
         $dias = $args['dias'];
         $fecha = self::restarDias($dias, date('Y-m-d'));
-        $pedidos = Pedido::where('precio', Pedido::min('precio'))->whereBetween('fecha', [$fecha, date('Y-m-d')])->get();
+        $pedidos = Pedido::where('precio', Pedido::whereBetween('fecha', [$fecha, date('Y-m-d')])->min('precio'))->get();
 
         if (count($pedidos) == 0) {
             $payload = array('mensaje' => "No se uso ninguna mesa en los ultimos $dias dias");

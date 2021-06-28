@@ -15,16 +15,20 @@ class ProductoController implements IApiUsable
         $stock = $parametros['stock'];
         $precio = $parametros['precio'];
 
-        if (self::verificarSector($sector)) {
-            $producto = new Producto();
-            $producto->nombre = $nombre;
-            $producto->sector = $sector;
-            $producto->stock = (int) $stock;
-            $producto->precio = (int) $precio;
-            $producto->save();
-            $payload = json_encode(array('mensaje' => 'Producto agregado con exito'));
-        } else {
-            $payload = json_encode(array('error' => 'Sector incorrecto'));
+        if (self::verificarNombre($nombre)) {
+            if (self::verificarSector($sector)) {
+                $producto = new Producto();
+                $producto->nombre = $nombre;
+                $producto->sector = $sector;
+                $producto->stock = (int) $stock;
+                $producto->precio = (int) $precio;
+                $producto->save();
+                $payload = json_encode(array('mensaje' => 'Producto agregado con exito'));
+            } else {
+                $payload = json_encode(array('error' => 'Sector incorrecto'));
+            }
+        }else{
+            $payload = json_encode(array('error' => 'Ya existe un producto con ese nombre'));
         }
 
         $response->getBody()->write($payload);
@@ -33,28 +37,30 @@ class ProductoController implements IApiUsable
 
     public function CargarUnoCsv($request, $response, $args)
     {
-        $parametros =  $request->getParsedBody();
         $archivos = $request->getUploadedFiles();
-        $ruta = Archivos::MoverArchivo(rand(10000, 99999), $archivos['pedido'], './assets/cargaProductosCsv/');
+        $ruta = Archivos::MoverArchivo(rand(10000, 99999), $archivos['producto'], './assets/cargaProductosCsv/');
         $payload = array();
 
-        foreach (Archivos::LeerArchivo($ruta) as $key => $producto) {
+        foreach (Archivos::LeerArchivo($ruta) as $producto) {
             $nombre = $producto[0];
             $sector = $producto[1];
             $stock = $producto[2];
             $precio = $producto[3];
 
-            if (self::verificarSector($sector)) {
-                $producto = new Producto();
-                $producto->nombre = $nombre;
-                $producto->sector = $sector;
-                $producto->stock = $stock;
-                $producto->precio = $precio;
-                $producto->save();
-                array_push($payload, array('mensaje' => "El siguiente producto fue agregado con exito: $nombre"));
-            }
-            else{
-                array_push($payload, array('error' => "Sector incorrecto. No se pudo cargar el siguiente producto: $nombre"));
+            if (self::verificarNombre($nombre)) {
+                if (self::verificarSector($sector)) {
+                    $producto = new Producto();
+                    $producto->nombre = $nombre;
+                    $producto->sector = $sector;
+                    $producto->stock = $stock;
+                    $producto->precio = $precio;
+                    $producto->save();
+                    array_push($payload, array('mensaje' => "El siguiente producto fue agregado con exito: $nombre"));
+                } else {
+                    array_push($payload, array('error' => "Sector incorrecto. No se pudo cargar el siguiente producto: $nombre"));
+                }
+            } else {
+                array_push($payload, array('error' => "Ya existe un producto con ese nombre. No se pudo cargar el siguiente producto: $nombre"));
             }
         }
         $response->getBody()->write(json_encode($payload));
@@ -145,6 +151,16 @@ class ProductoController implements IApiUsable
         if (strcasecmp("cocina", $sector) == 0 || strcasecmp("barra de tragos y vinos", $sector) == 0 || strcasecmp("barra de choperas", $sector) == 0 || strcasecmp("candy bar", $sector) == 0) {
             $rta = true;
         }
+        return $rta;
+    }
+
+    public static function verificarNombre($nombre)
+    {
+        $rta = false;
+        $producto = Producto::where('nombre', $nombre)->get();
+        if (count($producto) == 0) {
+            $rta = true;
+        };
         return $rta;
     }
 }
