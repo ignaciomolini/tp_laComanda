@@ -17,7 +17,7 @@ class Pedido extends Model
     const DELETED_AT = 'fecha_de_baja';
 
     protected $fillable = [
-        'id_usuario', 'estado'
+        'nombre_cliente', 'id_usuario', 'id_mesa', 'id_productos', 'cantidades', 'precio', 'estado', 'tiempo_estimado'
     ];
 
     
