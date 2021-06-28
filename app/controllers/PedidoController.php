@@ -64,22 +64,24 @@ class PedidoController implements IApiUsable
                 if (count($arrayProductos) == count($arrayCantidades)) {
                     foreach ($arrayProductos as $key => $idProducto) {
                         $producto = Producto::find($idProducto);
-                        if ($producto && $producto->stock >= $arrayCantidades[$key]) {
-                            $pedido->precio += $producto->precio * $arrayCantidades[$key];
-                            $nuevoStock = $producto->stock - $arrayCantidades[$key];
-                            $producto->stock = $nuevoStock;
-                            $producto->save();
-                            $subPedido = new SubPedido();
-                            $subPedido->codigo_pedido = $pedido->codigo;
-                            $subPedido->cantidad = $arrayCantidades[$key];
-                            $subPedido->id_producto = $idProducto;
-                            $subPedido->sector = $producto->sector;
-                            $subPedido->estado = 'pendiente';
-                            $subPedido->fecha = date('Y-m-d');
-                            $subPedido->save();
-                        } else {
+                        if (!$producto || $producto->stock < $arrayCantidades[$key]) {
                             throw new Exception("El producto de id $idProducto no existe o hay stock insuficiente");
                         }
+                    }
+                    foreach ($arrayProductos as $key => $idProducto) {
+                        $producto = Producto::find($idProducto);
+                        $pedido->precio += $producto->precio * $arrayCantidades[$key];
+                        $nuevoStock = $producto->stock - $arrayCantidades[$key];
+                        $producto->stock = $nuevoStock;
+                        $producto->save();
+                        $subPedido = new SubPedido();
+                        $subPedido->codigo_pedido = $pedido->codigo;
+                        $subPedido->cantidad = $arrayCantidades[$key];
+                        $subPedido->id_producto = $idProducto;
+                        $subPedido->sector = $producto->sector;
+                        $subPedido->estado = 'pendiente';
+                        $subPedido->fecha = date('Y-m-d');
+                        $subPedido->save();
                     }
                 } else {
                     throw new Exception("No coinciden los productos ingresados con las cantidades");
@@ -174,20 +176,22 @@ class PedidoController implements IApiUsable
                     if (count($arrayProductos) == count($arrayCantidades)) {
                         foreach ($arrayProductos as $key => $idProducto) {
                             $producto = Producto::find($idProducto);
-                            if ($producto && $producto->stock >= $arrayCantidades[$key]) {
-                                $pedido->precio += $producto->precio * $arrayCantidades[$key];
-                                $nuevoStock = $producto->stock - $arrayCantidades[$key] + $cantidadesViejas[$key];
-                                $producto->stock = $nuevoStock;
-                                $producto->save();
-                                $subPedido = SubPedido::where('codigo_pedido', $pedido->codigo)->where('id_producto', $idProductosViejos[$key])->first();
-                                $subPedido->id_producto = $idProducto;
-                                $subPedido->cantidad = $arrayCantidades[$key];
-                                $subPedido->sector = $producto->sector;
-                                $subPedido->estado = 'pendiente';
-                                $subPedido->save();
-                            } else {
+                            if (!$producto || $producto->stock < $arrayCantidades[$key]) {
                                 throw new Exception("El producto de id $idProducto no existe o hay stock insuficiente");
                             }
+                        }
+                        foreach ($arrayProductos as $key => $idProducto) {
+                            $producto = Producto::find($idProducto);
+                            $pedido->precio += $producto->precio * $arrayCantidades[$key];
+                            $nuevoStock = $producto->stock - $arrayCantidades[$key] + $cantidadesViejas[$key];
+                            $producto->stock = $nuevoStock;
+                            $producto->save();
+                            $subPedido = SubPedido::where('codigo_pedido', $pedido->codigo)->where('id_producto', $idProductosViejos[$key])->first();
+                            $subPedido->id_producto = $idProducto;
+                            $subPedido->cantidad = $arrayCantidades[$key];
+                            $subPedido->sector = $producto->sector;
+                            $subPedido->estado = 'pendiente';
+                            $subPedido->save();
                         }
                     } else {
                         throw new Exception("No coinciden los productos ingresados con las cantidades");
